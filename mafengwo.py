@@ -3,6 +3,7 @@ import urllib
 import urllib2
 import re
 import codecs
+import MySQLdb
 from platform import python_version
 
 class HtmlTools:
@@ -65,18 +66,21 @@ class MaFengWo:
     def GetUserId(self):
         reObj = re.compile(r'[0-9]+')
         userIds = reObj.findall(self.url)
-        return userIds
+        return userIds[0]
     #获取用户名
     def GetUser(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<li.*?class="name">(.*?)</li>')
-        user = reObj.findall(unicodePage)
+        users = reObj.findall(unicodePage)
+        user = users[0]
+        user = self.HtmlTool.ReplaceChar(user)
         return user
 
     def GetCity(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<li.*?class="city">(.*?)</li>',re.S)
-        city = reObj.findall(unicodePage)
+        cities = reObj.findall(unicodePage)
+        city = self.HtmlTool.ReplaceChar(cities[0])
         return city
 
     def GetGender(self,page):
@@ -118,6 +122,7 @@ class MaFengWo:
         return 'nothing'
 
     def startMaFengWo(self):
+
         f=codecs.open("user","a","utf-8")
         print 'This is startMaFengWo()========='
         page = self.GetPages()
@@ -129,26 +134,17 @@ class MaFengWo:
         totalPageNum = self.GetTotalPageNum(pageRaw)
         print '%s' % totalPageNum
         print '==============the user==============='
-        users = self.GetUser(page)
-        for user in users:
-            user = self.HtmlTool.ReplaceChar(user)
-            print '%s' % user
-            f.write("%s " % user)
+        user = self.GetUser(page)
+        print '%s' % user
         print '==============user id==============='
-        userIds=self.GetUserId()
-        for userId in userIds:
-        	print userId
-        	f.write("%s " % userId)
+        userId=self.GetUserId()
+        print userId
         print '=============the gender============='
         gender = self.GetGender(page)
         print '%s' % gender
-        f.write("%s " % gender)
         print '=============the city================'
-        cities = self.GetCity(page)
-        for city in cities:
-            city = self.HtmlTool.ReplaceChar(city)
-            print '%s' % city
-            f.write("%s" % city)
+        city = self.GetCity(page)
+        print '%s' % city
         print '==============the title==============='
         titles = self.GetTitles(page)
         for title in titles:
@@ -160,6 +156,18 @@ class MaFengWo:
         for senicSpot in senicSpots:
             senicSpot = self.HtmlTool.ReplaceChar(senicSpot)
             print '%s' % senicSpot
+        spot = senicSpots[0]
+        try:
+            conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='4364410',db='mafengwo',charset='utf8')
+            cur = conn.cursor()
+            param = [userId, user, gender,city]
+            query = "insert into tourist (uid, uname, gender, residence) values (%s, %s, %s, %s)"
+            n = cur.execute(query,param)
+            cur.close()
+            conn.commit()
+            conn.close()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
 
 
 

@@ -1,16 +1,17 @@
-#*-* coding *-*
+#*-* coding: utf-8 *-*
 # there are url of user's travel notes which contain information such as user's id, days of traveling, number of people who travels, expenses of travel of everyone
 #the date of travel and the type of travel(through angencies or travel personaly) and, of course,  where did the author visit during the tour.
 #so, it is greatly useful to fetch information from travel notes.
 #http://www.mafengwo.cn/i/912729.html
 #http://www.mafengwo.cn/i/1292266.html
+#http://www.mafengwo.cn/i/2991875.html
 import codecs
 import urllib
 import urllib2
 import re
-
+import MySQLdb
 class TravelNote:
-    def __init__(self,urlTravelNotes='http://www.mafengwo.cn/i/912729.html' ):
+    def __init__(self,urlTravelNotes='http://www.mafengwo.cn/i/2991875.html' ):
         self.urlTravelNote=urlTravelNotes
     #get page of urlTravelNote
     def GetTravelNote(self):
@@ -101,9 +102,7 @@ class TravelNote:
         return spotsInfo[0]
     def startTravelNote(self):
         page = self.GetTravelNote()
-        print 'page is fetched!!!!'
         spot = self.GetSpot(page)
-        print "THE SPOT IS: %s" % spot
         userNoteInfo = self.GetUserNoteInfo(page)
         userId = self.GetUserId(userNoteInfo)
         print "THE USER ID IS %s " % userId
@@ -117,9 +116,20 @@ class TravelNote:
         peopleACost = self.GetPeopleAverageCost(infoBoxes)
         print peopleACost
         travelDays = self.GetTravelDays(infoBoxes)
+        days = int(travelDays)
         print travelDays
         print 'infobox is over!!!!!!'
-
+        try:
+            conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='4364410',db='mafengwo',charset='utf8')
+            cur = conn.cursor()
+            param = [noteId, userId, date, int(travelDays), float(peopleACost), spot]
+            query = "insert into travelNote (nid, uid, travelDate, travelDays,travelCost,spot) values (%s, %s, %s, %s, %s, %s)"
+            n = cur.execute(query,param)
+            cur.close()
+            conn.commit()
+            conn.close()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
 __author__ = 'zhenxuan wang'
 if __name__ == '__main__':
     print 'start travel_info.py'
