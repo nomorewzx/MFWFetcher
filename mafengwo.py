@@ -3,7 +3,10 @@ import urllib
 import urllib2
 import re
 import codecs
+import MFWdb
 import MySQLdb
+import MFWurl
+
 from platform import python_version
 
 class HtmlTools:
@@ -95,12 +98,25 @@ class MaFengWo:
                 gender = 'male'
                 return gender 
 
+    def GetPersonalUrl(self,page):
+        unicodePage = page.decode('utf-8')
+        reObjRaw = re.compile(r'<div class="fansList">(.*?)</div>',re.S)
+        lists = reObjRaw.findall(unicodePage)
+        reObj = re.compile(r'href="(.*?)"',re.S)
+        personalUrls = reObj.findall(lists[0])
+        return personalUrls            
+    
+    def GetTravelNoteUrls(self,page):
+        unicodePage = page.decode('utf-8')
+        reObj = re.compile(r'<h2><a href="(.*?)">', re.S)
+        noteUrls  = reObj.findall(unicodePage)
+        return noteUrls
+        
     def GetPageNumRaw(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<div.*?class="turn_page">(.*?)</div>',re.S)
         pageNumRaws = reObj.findall(unicodePage)
-        for pageNumRaw in pageNumRaws:
-            return pageNumRaw
+        return pageNumRaws[0]
 
     def GetCurrentPageNum(self,pageNumRaw):
         reObj = re.compile(r'this-page(.*?)</span>',re.S)
@@ -122,7 +138,6 @@ class MaFengWo:
         return 'nothing'
 
     def startMaFengWo(self):
-
         f=codecs.open("user","a","utf-8")
         print 'This is startMaFengWo()========='
         page = self.GetPages()
@@ -157,12 +172,34 @@ class MaFengWo:
             senicSpot = self.HtmlTool.ReplaceChar(senicSpot)
             print '%s' % senicSpot
         spot = senicSpots[0]
+
+        personalUrls = self.GetPersonalUrl(page)
+        noteUrls = self.GetTravelNoteUrls(page)
         try:
-            conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='4364410',db='mafengwo',charset='utf8')
+            conn = MFWdb.MFWConnect()
             cur = conn.cursor()
+            cur1 = conn.cursor()
             param = [userId, user, gender,city]
             query = "insert into tourist (uid, uname, gender, residence) values (%s, %s, %s, %s)"
-            n = cur.execute(query,param)
+            #n = cur.execute(query,param)
+            for noteUrl in noteUrls:
+                reObj = re.compile(r'([0-9]{1,})')
+                noteId = reObj.findall(noteUrl)
+                noteUrl = MFWurl.toAbsUrl(noteUrl)
+                query = "insert into travelNoteUrl (nid,noteUrl) values (%s, %s)"
+                try:
+                    n = cur.execute(query,(noteId[0], noteUrl) )
+                except MySQLdb.Error,e:
+                    print 'insert to travelNoteUrl error %d,%s' % (e.args[0], e.args[1])
+            for personalUrl in personalUrls:
+                reObj = re.compile(r'([0-9]{1,})')
+                userId = reObj.findall(personalUrl)
+                personalUrl = MFWurl.toAbsUrl(personalUrl)
+                query = "insert into personalUrl (uid,perUrl) values (%s, %s)"
+                try:
+                    n = cur1.execute(query,( userId[0], personalUrl ) )
+                except MySQLdb.Error,e:
+                    print 'insert to personalUrl error%d, %s' % (e.args[0], e.args[1])
             cur.close()
             conn.commit()
             conn.close()

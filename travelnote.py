@@ -10,9 +10,11 @@ import urllib
 import urllib2
 import re
 import MySQLdb
+import mafengwo
 class TravelNote:
     def __init__(self,urlTravelNotes='http://www.mafengwo.cn/i/2991875.html' ):
         self.urlTravelNote=urlTravelNotes
+        self.HtmlTool = mafengwo.HtmlTools()
     #get page of urlTravelNote
     def GetTravelNote(self):
         myUrl = self.urlTravelNote
@@ -31,8 +33,9 @@ class TravelNote:
         unicodePage = page.decode('utf-8')
         s = r'<p class="txt">(.*?)</p>'
         reObj = re.compile(s,re.S)
-        spot = reObj.findall(unicodePage)
-        return spot[0]
+        spots = reObj.findall(unicodePage)
+        spot = self.HtmlTool.ReplaceChar(spots[0])
+        return spot
     #GetUserNoteInfo() fetch the div block <div class="a_con_text cont"......> which contains userId and dataId(note ID)
     def GetUserNoteInfo(self,page):
         unicodePage = page.decode('utf-8')
@@ -103,6 +106,7 @@ class TravelNote:
     def startTravelNote(self):
         page = self.GetTravelNote()
         spot = self.GetSpot(page)
+        print 'SPOT IS: %s' % spot
         userNoteInfo = self.GetUserNoteInfo(page)
         userId = self.GetUserId(userNoteInfo)
         print "THE USER ID IS %s " % userId
