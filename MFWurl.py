@@ -10,5 +10,8 @@ import urllib
 import urllib2
 
 # resolve relative url as absolute url
-def toAbsUrl(relativeUrl):
-    return "http://www.mafengwo.cn"+relativeUrl
+def toAbsUrl(relativeUrl,absUrl=''):
+    if relativeUrl[0] == '/' :
+        return "http://www.mafengwo.cn"+relativeUrl
+    elif relativeUrl[0] == '?':
+        return absUrl+relativeUrl

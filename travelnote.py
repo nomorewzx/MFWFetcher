@@ -11,13 +11,13 @@ import urllib2
 import re
 import MySQLdb
 import mafengwo
+import MFWdb
 class TravelNote:
-    def __init__(self,urlTravelNotes='http://www.mafengwo.cn/i/2991875.html' ):
-        self.urlTravelNote=urlTravelNotes
+    def __init__(self):
         self.HtmlTool = mafengwo.HtmlTools()
     #get page of urlTravelNote
-    def GetTravelNote(self):
-        myUrl = self.urlTravelNote
+    def GetTravelNote(self,myNoteUrl=''):
+        myUrl = myNoteUrl
         myUrlReq = urllib2.Request(myUrl)
         myUrlReq.add_header('User-Agent','Mozilla/4.0')
         try:
@@ -33,24 +33,36 @@ class TravelNote:
         unicodePage = page.decode('utf-8')
         s = r'<p class="txt">(.*?)</p>'
         reObj = re.compile(s,re.S)
-        spots = reObj.findall(unicodePage)
-        spot = self.HtmlTool.ReplaceChar(spots[0])
-        return spot
+        try:
+            spots = reObj.findall(unicodePage)
+            spot = self.HtmlTool.ReplaceChar(spots[0])
+            return spot
+        except IndexError,e:
+            print 'no spot found!'
+            return 'NoSpot'
     #GetUserNoteInfo() fetch the div block <div class="a_con_text cont"......> which contains userId and dataId(note ID)
     def GetUserNoteInfo(self,page):
         unicodePage = page.decode('utf-8')
         s = r'<div class="a_con_text cont".*?>'
         reObjRaw = re.compile(s,re.S)
-        userNoteInfo = reObjRaw.findall(unicodePage)
-        return userNoteInfo[0]
+        try:
+            userNoteInfo = reObjRaw.findall(unicodePage)
+            return userNoteInfo[0]
+        except IndexError,e:
+        	print 'no userInfo found'
+        	return 'NoUserInfo'
     #GetUserId() fetch userId from div block of GetUserNoteInfo()
     def GetUserId(self,userNoteInfo):
+        if userNoteInfo == 'NoUserInfo':
+        	return 'No UserId'
         s = r'ownerid="([0-9]{1,})"'
         reObj = re.compile(s,re.S)
         userId = reObj.findall(userNoteInfo)
         return userId[0]
     #GetNoteId() fetch note id from div block of GetUserNoteInfo()
     def GetNoteId(self,userNoteInfo):
+        if userNoteInfo == 'NoUserInfo':
+            return 'No UserId'
         s = r'dataid="([0-9]{1,})"'
         reObj = re.compile(s,re.S)
         noteId = reObj.findall(userNoteInfo)
@@ -60,25 +72,31 @@ class TravelNote:
         unicodePage = page.decode('utf-8')
         s = r'<div class="basic-info">(.*?)</div>'
         reObj = re.compile(s,re.S)
-        infoBoxes = reObj.findall(unicodePage)
-        if 0 == infoBoxes.__len__() :
-            print 'this travel note %s does not contains the info box!!' % self.url
-            return -1
-        return infoBoxes[0]
+        try:
+            infoBoxes = reObj.findall(unicodePage)
+            return infoBoxes[0]
+        except IndexError,e:
+            return 'NoInfoBox'
 
     def GetDate(self,infoBox):
+        if infoBox == 'NoInfoBox':
+            return 'NoDateFound'
         s  = r'[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}'
         reObj  = re.compile(s,re.S)
         date = reObj.findall(infoBox)
         return date[0]
 
     def GetPeople(self,infoBox):
+        if infoBox == 'NoInfoBox':
+            return 'NoDateFound'
         s = r'<li class="item-people"><i></i>..<span><b>(.*?)</b></span></li>'
         reObj = re.compile(s,re.S)
         people = reObj.findall(infoBox)
         return people
 
     def GetPeopleAverageCost(self,infoBox):
+        if infoBox == 'NoInfoBox':
+            return 'NoDateFound'
         s = r'<li class="item-cost">.*?</li>'
         reObjRaw = re.compile(s,re.S)
         rawCost = reObjRaw.findall(infoBox)
@@ -87,6 +105,8 @@ class TravelNote:
         return peopleAverageCost[0]
 
     def GetTravelDays(self,infoBox):
+        if infoBox == 'NoInfoBox':
+            return 'NoDateFound'
         s = r'<li class="item-days">.*?</li>'
         reObjRaw = re.compile(s,re.S)
         rawDays = reObjRaw.findall(infoBox)
@@ -103,8 +123,9 @@ class TravelNote:
         reObj = re.compile(s,re.S)
         spotsInfo = reObj.findall(unicodePage)
         return spotsInfo[0]
-    def startTravelNote(self):
-        page = self.GetTravelNote()
+
+    def startTravelNote(self,myNoteUrl=''):
+        page = self.GetTravelNote(myNoteUrl)
         spot = self.GetSpot(page)
         print 'SPOT IS: %s' % spot
         userNoteInfo = self.GetUserNoteInfo(page)
@@ -120,13 +141,12 @@ class TravelNote:
         peopleACost = self.GetPeopleAverageCost(infoBoxes)
         print peopleACost
         travelDays = self.GetTravelDays(infoBoxes)
-        days = int(travelDays)
         print travelDays
         print 'infobox is over!!!!!!'
         try:
-            conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='4364410',db='mafengwo',charset='utf8')
+            conn = MFWdb.MFWConnect()
             cur = conn.cursor()
-            param = [noteId, userId, date, int(travelDays), float(peopleACost), spot]
+            param = [noteId, userId, date, travelDays, peopleACost, spot]
             query = "insert into travelNote (nid, uid, travelDate, travelDays,travelCost,spot) values (%s, %s, %s, %s, %s, %s)"
             n = cur.execute(query,param)
             cur.close()

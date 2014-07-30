@@ -28,19 +28,11 @@ class HtmlTools:
             return x
 
 class MaFengWo:
-    def __init__(self,urlPara="http://www.mafengwo.cn/u/347077.html",pagePara=1,):
-        self.page = pagePara
-        self.pages = []
-        self.url = "http://www.mafengwo.cn/u/347077.html"
+    def __init__(self):
         self.HtmlTool = HtmlTools()
-        #从字符串中提取数字
-    def GetNums(self,uniString):
-    #得到的参数为unicode编码
-        NumString = filter(unicode.isdigit,uniString)
-        return NumString
-        #取得网页
-    def GetPages(self):
-        myUrl = self.url
+    #取得网页
+    def GetPages(self,myurl=''):
+        myUrl = myurl
         myUrlReq = urllib2.Request(myUrl)
         myUrlReq.add_header('User-Agent','Mozilla/4.0')
         try:
@@ -52,23 +44,11 @@ class MaFengWo:
         except:
             print 'Fail to connect %s' % self.url
             return None
-     #获取文章标题
-    def GetTitles(self,page):
-        unicodePage = page.decode('utf-8')
-        reObj = re.compile(r'<h2>(.*?)</h2>')
-        titles = reObj.findall(unicodePage)
-        return titles
-    #获取文章中目的地
-    def GetSenicSpot(self,page):
-        unicodePage = page.decode('utf-8')
-        s = r'<a.*href="/travel-scenic-spot/.*>(.*?)</a></span>'
-        reObj = re.compile(r'travel-scenic-spot(.*?)</a></span>',re.S)
-        senicSpots = reObj.findall(unicodePage)
-        return senicSpots
+
     #get user's id (included in url)
-    def GetUserId(self):
+    def GetUserId(self,myUrl):
         reObj = re.compile(r'[0-9]+')
-        userIds = reObj.findall(self.url)
+        userIds = reObj.findall(myUrl)
         return userIds[0]
     #获取用户名
     def GetUser(self,page):
@@ -78,14 +58,14 @@ class MaFengWo:
         user = users[0]
         user = self.HtmlTool.ReplaceChar(user)
         return user
-
+    #get user's residence
     def GetCity(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<li.*?class="city">(.*?)</li>',re.S)
         cities = reObj.findall(unicodePage)
         city = self.HtmlTool.ReplaceChar(cities[0])
         return city
-
+    #get user's gender
     def GetGender(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<li.*?class="gender">(.*?)</li>',re.S)
@@ -97,109 +77,74 @@ class MaFengWo:
             else:
                 gender = 'male'
                 return gender 
-
+    #fetch personal urls from fansList and return lists that contains urls.
+    #leaving resolving and storing urls to start() function
     def GetPersonalUrl(self,page):
         unicodePage = page.decode('utf-8')
         reObjRaw = re.compile(r'<div class="fansList">(.*?)</div>',re.S)
         lists = reObjRaw.findall(unicodePage)
-        reObj = re.compile(r'href="(.*?)"',re.S)
+        reObj = re.compile(r'<span><a href="(.*?)">',re.S)
         personalUrls = reObj.findall(lists[0])
         return personalUrls            
-    
+    #fetch travel notes urls and returns lists that contains notes urls. leaving resolving and storing urls to start() funciton
     def GetTravelNoteUrls(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<h2><a href="(.*?)">', re.S)
         noteUrls  = reObj.findall(unicodePage)
         return noteUrls
-        
+    #get html code segment whcih contains page number of personal home page.
     def GetPageNumRaw(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<div.*?class="turn_page">(.*?)</div>',re.S)
-        pageNumRaws = reObj.findall(unicodePage)
-        return pageNumRaws[0]
+        try:
+            pageNumRaws = reObj.findall(unicodePage)
+            return pageNumRaws[0]
+        except IndexError, e:
+        	print 'No any content'
+        	return 'NoContent'
 
-    def GetCurrentPageNum(self,pageNumRaw):
-        reObj = re.compile(r'this-page(.*?)</span>',re.S)
-        currentPageNums = reObj.findall(pageNumRaw)
-        for currentPageNum in currentPageNums:
-            currentPageNum = self.GetNums(currentPageNum)
-            return currentPageNum
-
-    def GetTotalPageNum(self,pageNumRaw):
-        #pageNumRaw中<a></a>的个数n,再加1，即n+1，即为总页数
-        reObj = re.compile(r'<a.*?href.*?>(.*?)</a')
-        totalPageNums = reObj.findall(pageNumRaw)
-        totalPageNum = totalPageNums.__len__()
-        totalPageNum+=1
-        return totalPageNum
-
+    #get pages urls if there are more than 1 pages
     def GetPageUrl(self,pageNumRaw):
-        print 'nothing'
-        return 'nothing'
+        if pageNumRaw == 'NoContent':
+            return 'noTravelNotes'
+        n = self.GetTotalPageNum(pageNumRaw)
+        if (1==n):
+            return -1
+        reObj = re.compile(r"""href='(.*?)'  class="ti">""",re.S)
+        pageUrls = reObj.findall(pageNumRaw)
+        return pageUrls
 
-    def startMaFengWo(self):
-        f=codecs.open("user","a","utf-8")
+    def startMaFengWo(self,myPUrl):
+
         print 'This is startMaFengWo()========='
-        page = self.GetPages()
+        page = self.GetPages(myPUrl)
         pageRaw = self.GetPageNumRaw(page)
-        print '=============current page==========='
-        currentPageNum = self.GetCurrentPageNum(pageRaw)
-        print '%s' % currentPageNum
-        print'==============number of total page===='
-        totalPageNum = self.GetTotalPageNum(pageRaw)
-        print '%s' % totalPageNum
-        print '==============the user==============='
-        user = self.GetUser(page)
-        print '%s' % user
-        print '==============user id==============='
-        userId=self.GetUserId()
-        print userId
-        print '=============the gender============='
-        gender = self.GetGender(page)
-        print '%s' % gender
-        print '=============the city================'
-        city = self.GetCity(page)
-        print '%s' % city
-        print '==============the title==============='
-        titles = self.GetTitles(page)
-        for title in titles:
-            title = self.HtmlTool.ReplaceChar(title)
-            print '%s' % title
-        print '==============senic spots=============='
-        senicSpots = self.GetSenicSpot(page)
-        print 'the length of senicSpots is %d' % senicSpots.__len__()
-        for senicSpot in senicSpots:
-            senicSpot = self.HtmlTool.ReplaceChar(senicSpot)
-            print '%s' % senicSpot
-        spot = senicSpots[0]
 
         personalUrls = self.GetPersonalUrl(page)
+        i = MFWdb.insertUrls(personalUrls, 'personalUrl')
+        print 'insert  personal urls'
         noteUrls = self.GetTravelNoteUrls(page)
+        j = MFWdb.insertUrls(noteUrls,'travelNoteUrl')
+        print 'insert travel note urls'
+
+        pageUrls = self.GetPageUrl(pageRaw)
+        print pageUrls
+        if(pageUrls != -1):
+            for pageUrl in pageUrls:
+                pageUrl = MFWurl.toAbsUrl(pageUrl,myPUrl)
+                print pageUrl
+                pageOther = self.GetPages(pageUrl)
+                travelNoteOtherPageUrls = self.GetTravelNoteUrls(pageOther)
+                n = MFWdb.insertUrls(travelNoteOtherPageUrls, 'travelNoteUrl')
+                print 'insert %d travel notes urls' % n
+
         try:
             conn = MFWdb.MFWConnect()
             cur = conn.cursor()
             cur1 = conn.cursor()
             param = [userId, user, gender,city]
             query = "insert into tourist (uid, uname, gender, residence) values (%s, %s, %s, %s)"
-            #n = cur.execute(query,param)
-            for noteUrl in noteUrls:
-                reObj = re.compile(r'([0-9]{1,})')
-                noteId = reObj.findall(noteUrl)
-                noteUrl = MFWurl.toAbsUrl(noteUrl)
-                query = "insert into travelNoteUrl (nid,noteUrl) values (%s, %s)"
-                try:
-                    n = cur.execute(query,(noteId[0], noteUrl) )
-                except MySQLdb.Error,e:
-                    print 'insert to travelNoteUrl error %d,%s' % (e.args[0], e.args[1])
-            for personalUrl in personalUrls:
-                reObj = re.compile(r'([0-9]{1,})')
-                userId = reObj.findall(personalUrl)
-                personalUrl = MFWurl.toAbsUrl(personalUrl)
-                query = "insert into personalUrl (uid,perUrl) values (%s, %s)"
-                try:
-                    n = cur1.execute(query,( userId[0], personalUrl ) )
-                except MySQLdb.Error,e:
-                    print 'insert to personalUrl error%d, %s' % (e.args[0], e.args[1])
+            n = cur.execute(query,param)
             cur.close()
             conn.commit()
             conn.close()
