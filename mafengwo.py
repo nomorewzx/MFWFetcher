@@ -42,12 +42,12 @@ class MaFengWo:
             print 'Connect Success!'
             return myPage
         except:
-            print 'Fail to connect %s' % self.url
-            return None
+            print 'Fail to connect %s' % myUrl
+            return 'NoUser'
 
     #get user's id (included in url)
     def GetUserId(self,myUrl):
-        reObj = re.compile(r'[0-9]+')
+        reObj = re.compile(r'([0-9]+)')
         userIds = reObj.findall(myUrl)
         return userIds[0]
     #获取用户名
@@ -103,6 +103,15 @@ class MaFengWo:
         	print 'No any content'
         	return 'NoContent'
 
+    def GetTotalPageNum(self,pageNumRaw):
+        #pageNumRaw中<a></a>的个数n,再加1，即n+1，即为总页数
+        reObj = re.compile(r'<a.*?href.*?>(.*?)</a')
+        totalPageNums = reObj.findall(pageNumRaw)
+        totalPageNum = totalPageNums.__len__()
+        totalPageNum+=1
+        return totalPageNum
+
+
     #get pages urls if there are more than 1 pages
     def GetPageUrl(self,pageNumRaw):
         if pageNumRaw == 'NoContent':
@@ -118,9 +127,22 @@ class MaFengWo:
 
         print 'This is startMaFengWo()========='
         page = self.GetPages(myPUrl)
+        if page =='NoUser':
+        	print 'no this user'
+        	n = MFWdb.deletePersonalUrl(myPUrl)
+        	return None
         pageRaw = self.GetPageNumRaw(page)
-
+        if pageRaw == 'NoContent':
+            print 'unworth fetching!'
+            n = MFWdb.deletePersonalUrl(myPUrl)
+            return None
         personalUrls = self.GetPersonalUrl(page)
+        userId = self.GetUserId(myPUrl)
+        print userId
+        user = self.GetUser(page)
+        print 'user name is %s' % user
+        gender = self.GetGender(page)
+        city = self.GetCity(page)
         i = MFWdb.insertUrls(personalUrls, 'personalUrl')
         print 'insert  personal urls'
         noteUrls = self.GetTravelNoteUrls(page)
@@ -156,4 +178,4 @@ class MaFengWo:
 __author__ = 'WangZhenXuan'
 if __name__ == '__main__':
     maFengWo = MaFengWo()
-    maFengWo.startMaFengWo()
+    maFengWo.startMaFengWo('http://www.mafengwo.cn/u/5131692.html')

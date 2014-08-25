@@ -67,6 +67,23 @@ class TravelNote:
         reObj = re.compile(s,re.S)
         noteId = reObj.findall(userNoteInfo)
         return noteId[0]
+    #get time of note published by users. 
+    def GetNoteDate(self,page):
+        unicodePage = page.decode('utf-8')
+        s = r'<span class="date">(.*?)</span>'
+        reObj = re.compile(s,re.S)
+        try:
+            noteTime = reObj.findall(unicodePage)
+            print noteTime[0]
+            s1  = r'[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}'
+            reObjDate = re.compile(s1,re.S)
+            dates = reObjDate.findall(noteTime[0])
+            print dates[0]
+            return dates[0] 
+        except IndexError, e:
+            print 'no note published date found!'
+            return 'NoNoteDate'
+
     #the function GetTripInfo() fetch basic information 
     def GetTripInfo(self,page):
         unicodePage = page.decode('utf-8')
@@ -82,27 +99,37 @@ class TravelNote:
         if infoBox == 'NoInfoBox':
             return 'NoDateFound'
         s  = r'[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}'
-        reObj  = re.compile(s,re.S)
-        date = reObj.findall(infoBox)
-        return date[0]
+        try:
+            reObj  = re.compile(s,re.S)
+            date = reObj.findall(infoBox)
+            return date[0]
+        except IndexError,e:
+            print 'NoTravelDateFound'
+            return 'NoTravelDateFound'
 
     def GetPeople(self,infoBox):
         if infoBox == 'NoInfoBox':
             return 'NoDateFound'
         s = r'<li class="item-people"><i></i>..<span><b>(.*?)</b></span></li>'
-        reObj = re.compile(s,re.S)
-        people = reObj.findall(infoBox)
-        return people
+        try:
+            reObj = re.compile(s,re.S)
+            people = reObj.findall(infoBox)
+            return people
+        except IndexError, e:
+            return 'No people found'
 
     def GetPeopleAverageCost(self,infoBox):
         if infoBox == 'NoInfoBox':
-            return 'NoDateFound'
+            return 'NoCostFound'
         s = r'<li class="item-cost">.*?</li>'
         reObjRaw = re.compile(s,re.S)
         rawCost = reObjRaw.findall(infoBox)
         reObj = re.compile(r'[0-9]{1,}')
-        peopleAverageCost = reObj.findall(rawCost[0])
-        return peopleAverageCost[0]
+        try:
+            peopleAverageCost = reObj.findall(rawCost[0])
+            return peopleAverageCost[0]
+        except IndexError, e:
+            return "NoCostFound"
 
     def GetTravelDays(self,infoBox):
         if infoBox == 'NoInfoBox':
@@ -111,8 +138,11 @@ class TravelNote:
         reObjRaw = re.compile(s,re.S)
         rawDays = reObjRaw.findall(infoBox)
         reObj = re.compile(r'[0-9]{1,}',re.S)
-        travelDays = reObj.findall(rawDays[0])
-        return travelDays[0]
+        try:
+            travelDays = reObj.findall(rawDays[0])
+            return travelDays[0]
+        except IndexError,e:
+            return 'NoTravelDaysFound'
     #travel-type and travel-people is for future to fetch
 
 
@@ -127,6 +157,8 @@ class TravelNote:
     def startTravelNote(self,myNoteUrl=''):
         page = self.GetTravelNote(myNoteUrl)
         spot = self.GetSpot(page)
+        noteDate = self.GetNoteDate(page)
+        print 'Note Date is %s' % noteDate
         print 'SPOT IS: %s' % spot
         userNoteInfo = self.GetUserNoteInfo(page)
         userId = self.GetUserId(userNoteInfo)
@@ -146,8 +178,8 @@ class TravelNote:
         try:
             conn = MFWdb.MFWConnect()
             cur = conn.cursor()
-            param = [noteId, userId, date, travelDays, peopleACost, spot]
-            query = "insert into travelNote (nid, uid, travelDate, travelDays,travelCost,spot) values (%s, %s, %s, %s, %s, %s)"
+            param = [noteId, userId, date, travelDays, peopleACost, spot, noteDate]
+            query = "insert into travelNote (nid, uid, travelDate, travelDays,travelCost,spot,noteDate) values (%s, %s, %s, %s, %s, %s,%s)"
             n = cur.execute(query,param)
             cur.close()
             conn.commit()
@@ -158,7 +190,7 @@ __author__ = 'zhenxuan wang'
 if __name__ == '__main__':
     print 'start travel_info.py'
     travelNote = TravelNote()
-    travelNote.startTravelNote()
+    travelNote.startTravelNote('http://www.mafengwo.cn/i/504381.html')
 
 
 
