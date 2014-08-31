@@ -178,4 +178,4 @@ class MaFengWo:
 __author__ = 'WangZhenXuan'
 if __name__ == '__main__':
     maFengWo = MaFengWo()
-    maFengWo.startMaFengWo('http://www.mafengwo.cn/u/5131692.html')
+    maFengWo.startMaFengWo('http://www.mafengwo.cn/u/17624370.html')
