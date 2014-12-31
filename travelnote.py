@@ -192,7 +192,3 @@ if __name__ == '__main__':
     print 'start travel_info.py'
     travelNote = TravelNote()
     travelNote.startTravelNote('http://www.mafengwo.cn/i/504381.html')
-
-
-
-

@@ -9,7 +9,7 @@ import MFWurl
 
 from platform import python_version
 
-class HtmlTools:
+class HtmlTools(object):
     BngCharToNoneRex = re.compile(r'(\t|\n| |<a.*?>|<img.*?>)')
     EndCharToNoneRex = re.compile(r'<.*?>')
     BngPartRex = re.compile(r'<p.*?>')
@@ -27,7 +27,7 @@ class HtmlTools:
             x = x.replace(tab[0],tab[1])
             return x
 
-class MaFengWo:
+class MaFengWo(object):
     def __init__(self):
         self.HtmlTool = HtmlTools()
     #取得网页
@@ -39,18 +39,18 @@ class MaFengWo:
             myResp = urllib2.urlopen(myUrlReq)
             myPage = myResp.read()
             myResp.close()
-            print 'Connect Success!'
             return myPage
         except:
             print 'Fail to connect %s' % myUrl
             return 'NoUser'
 
-    #get user's id (included in url)
+    #get user's id from url.
+    #i.e.  url 'http://www.mafengwo.cn/u/21xx08.html', the id is 21xx08
     def GetUserId(self,myUrl):
         reObj = re.compile(r'([0-9]+)')
         userIds = reObj.findall(myUrl)
         return userIds[0]
-    #获取用户名
+    #get user name
     def GetUser(self,page):
         unicodePage = page.decode('utf-8')
         reObj = re.compile(r'<li.*?class="name">(.*?)</li>')
@@ -85,7 +85,7 @@ class MaFengWo:
         lists = reObjRaw.findall(unicodePage)
         reObj = re.compile(r'<span><a href="(.*?)">',re.S)
         personalUrls = reObj.findall(lists[0])
-        return personalUrls            
+        return personalUrls           
     #fetch travel notes urls and returns lists that contains notes urls. leaving resolving and storing urls to start() funciton
     def GetTravelNoteUrls(self,page):
         unicodePage = page.decode('utf-8')
@@ -172,8 +172,6 @@ class MaFengWo:
             conn.close()
         except MySQLdb.Error, e:
             print "Mysql Error %d: %s" % (e.args[0], e.args[1])
-
-
 
 __author__ = 'WangZhenXuan'
 if __name__ == '__main__':
