@@ -6,6 +6,7 @@ import codecs
 import MFWdb
 import MySQLdb
 import MFWurl
+import travelnote
 
 from platform import python_version
 
@@ -43,6 +44,8 @@ class MaFengWo(object):
         except:
             print 'Fail to connect %s' % myUrl
             return 'NoUser'
+        finally:
+            MFWdb.deletePersonalUrl(myurl)
 
     #get user's id from url.
     #i.e.  url 'http://www.mafengwo.cn/u/21xx08.html', the id is 21xx08
@@ -124,7 +127,6 @@ class MaFengWo(object):
         return pageUrls
 
     def startMaFengWo(self,myPUrl):
-
         print 'This is startMaFengWo()========='
         page = self.GetPages(myPUrl)
         if page =='NoUser':
@@ -143,23 +145,7 @@ class MaFengWo(object):
         print 'user name is %s' % user
         gender = self.GetGender(page)
         city = self.GetCity(page)
-        i = MFWdb.insertUrls(personalUrls, 'personalUrl')
-        print 'insert  personal urls'
-        noteUrls = self.GetTravelNoteUrls(page)
-        j = MFWdb.insertUrls(noteUrls,'travelNoteUrl')
-        print 'insert travel note urls'
-
-        pageUrls = self.GetPageUrl(pageRaw)
-        print pageUrls
-        if(pageUrls != -1):
-            for pageUrl in pageUrls:
-                pageUrl = MFWurl.toAbsUrl(pageUrl,myPUrl)
-                print pageUrl
-                pageOther = self.GetPages(pageUrl)
-                travelNoteOtherPageUrls = self.GetTravelNoteUrls(pageOther)
-                n = MFWdb.insertUrls(travelNoteOtherPageUrls, 'travelNoteUrl')
-                print 'insert %d travel notes urls' % n
-
+#=========================insert personal information========================
         try:
             conn = MFWdb.MFWConnect()
             cur = conn.cursor()
@@ -167,13 +153,39 @@ class MaFengWo(object):
             param = [userId, user, gender,city]
             query = "insert into tourist (uid, uname, gender, residence) values (%s, %s, %s, %s)"
             n = cur.execute(query,param)
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+            return None 
+        finally:
             cur.close()
             conn.commit()
             conn.close()
-        except MySQLdb.Error, e:
-            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+
+        i = MFWdb.insertUrls(personalUrls, 'personalUrl')
+        print 'insert  personal urls'
+        noteUrls = self.GetTravelNoteUrls(page)
+        #j = MFWdb.insertUrls(noteUrls,'travelNoteUrl')
+        #print 'insert travel note urls'
+
+        pageUrls = self.GetPageUrl(pageRaw)
+        print pageUrls
+
+        if(pageUrls != -1):
+            for pageUrl in pageUrls:
+                pageUrl = MFWurl.toAbsUrl(pageUrl,myPUrl)
+                print pageUrl
+                pageOther = self.GetPages(pageUrl)
+                travelNoteOtherPageUrls = self.GetTravelNoteUrls(pageOther)
+                #n = MFWdb.insertUrls(travelNoteOtherPageUrls, 'travelNoteUrl')
+                noteUrls = noteUrls+travelNoteOtherPageUrls
+
+#=============================start fetch travel notes==================
+        travelNote = travelnote.TravelNote()
+        for noteUrl in noteUrls:
+            noteUrl = MFWurl.toAbsUrl(noteUrl)
+            travelNote.startTravelNote(noteUrl)
 
 __author__ = 'WangZhenXuan'
 if __name__ == '__main__':
     maFengWo = MaFengWo()
-    maFengWo.startMaFengWo('http://www.mafengwo.cn/u/17624370.html')
+    maFengWo.startMaFengWo('http://www.mafengwo.cn/u/1001050.html')

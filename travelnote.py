@@ -27,8 +27,9 @@ class TravelNote:
             return myPage
         except:
             print 'fail to connect %s' % myUrl
-            MFWdb.deleteTravelNoteUrl(myUrl)
             return None
+        finally:
+            MFWdb.deleteTravelNoteUrl(myUrl)
     #GetSpot() fetch the spot from block <p class="txt">.......</p>
     def GetSpot(self,page):
         unicodePage = page.decode('utf-8')
@@ -191,4 +192,4 @@ __author__ = 'zhenxuan wang'
 if __name__ == '__main__':
     print 'start travel_info.py'
     travelNote = TravelNote()
-    travelNote.startTravelNote('http://www.mafengwo.cn/i/504381.html')
+    travelNote.startTravelNote('http://www.mafengwo.cn/i/1171316.html')
