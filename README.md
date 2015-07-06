@@ -23,8 +23,8 @@ MFWFetcher 用于抓取mafengwo.cn网站的公开用户历史数据，具体包�
 使用说明：
     在使用MFWFetcher之前,应创建数据库 `mafengwo`,执行tables.sql即可完成创建
     
-    1. MFWFetcher需要用户个人主页地址开始爬取工作.因此需首先编辑 mafengwo.py中的 '__main__' 部分代码,将用户主页地址添加进该
-段代码,如下所示:
+    1. MFWFetcher需要用户个人主页地址开始爬取工作.因此需首先编辑 mafengwo.py中的 '__main__' 部分代码,将用户主页地址添加进
+该段代码,如下所示:
       if __name__ == '__main__':
          maFengWo = MaFengWo()
          result = maFengWo.startMaFengWo('http://www.mafengwo.cn/u/34917925.html')
