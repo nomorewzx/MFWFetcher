@@ -1,5 +1,5 @@
 MFWFetcher
-==============
+
 MFWFetcher fetches public users' history data from MaFengwo.
 Specifically, this program will fetch users' historical data from MFW, including where did they go,when did they go and how often did user travel.
 
@@ -18,10 +18,10 @@ Usage:
    4. The result will all be in `mafengwo`, users' info is stored in `tourist`, travelnotes' info is stored in `travelNote`.
 
 MFWFetcher
-==============
-MFWFetcher 用于抓取mafengwo.cn网站的公开用户历史数据，具体包括用户公开的个人信息，用户旅游目的地，旅游日期，旅游花费，日志发表日期等；
 
-使用说明：
+MFWFetcher 用于抓取mafengwo.cn网站的公开用户历史数据,具体包括用户公开的个人信息,用户旅游目的地,旅游日期,旅游花费,日志发表日期等;
+
+使用说明:
     在使用MFWFetcher之前,应创建数据库 `mafengwo`,执行tables.sql即可完成创建
     
     1. MFWFetcher需要用户个人主页地址开始爬取工作.因此需首先编辑 mafengwo.py中的 '__main__' 部分代码,将用户主页地址添加进
