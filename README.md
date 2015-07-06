@@ -14,6 +14,7 @@ Usage:
   
    2. The MFWFetcher is designed to crawl user's follwers' data, so once start fetching somebody's homepage, his/her followers' homepage url would be inserted right in table `personalUrl`. 
    3. According to #2, after repeat #1 one or several(if necessary) times, MFW_main.py should be executed without params needed. Note: MFW_main.py dose not crawl data recursively for the limitations of mafengwo.cn that would require identifying codes after many requests in a short time, which makes rescursion useless for MFWFetcher will always be interrupted after some mininutes.
+
    4. The result will all be in `mafengwo`, users' info is stored in `tourist`, travelnotes' info is stored in `travelNote`.
 
 MFWFetcher
@@ -35,4 +36,5 @@ MFWFetcher 用于抓取mafengwo.cn网站的公开用户历史数据，具体包�
     3. 根据#2,在执行完#1,或者重复多次#1(如果需要)后,执行 MFW_main.py,执行该程序不需要任何参数。需要注意的是:由于
     mafengwo.cn在一个IP地址短时间发出多次请求后会要求填写页面验证码,所以MFW_main.py并没有递归执行——这样做意义不大，因为程
     序在执行一段时间后,总会自己停止.
+    
     4. 结果会存储在 `mafengwo`数据库中,用户数据存储在`tourist`表中,旅游日志数据存储在`travelNote`表中。
