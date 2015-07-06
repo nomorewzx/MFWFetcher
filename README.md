@@ -24,7 +24,7 @@ MFWFetcher 用于抓取mafengwo.cn网站的公开用户历史数据，具体包�
     在使用MFWFetcher之前,应创建数据库 `mafengwo`,执行tables.sql即可完成创建
     
     1. MFWFetcher需要用户个人主页地址开始爬取工作.因此需首先编辑 mafengwo.py中的 '__main__' 部分代码,将用户主页地址添加进
-该段代码,如下所示:
+    该段代码,如下所示:
       if __name__ == '__main__':
          maFengWo = MaFengWo()
          result = maFengWo.startMaFengWo('http://www.mafengwo.cn/u/34917925.html')
@@ -33,6 +33,6 @@ MFWFetcher 用于抓取mafengwo.cn网站的公开用户历史数据，具体包�
     2. MFWFetcher 会爬取用户的粉丝们的数据，因此 爬取一位用户的数据时，他/她的粉丝主页地址将会被插入`personalUrl`表.
     
     3. 根据#2,在执行完#1,或者重复多次#1(如果需要)后,执行 MFW_main.py,执行该程序不需要任何参数。需要注意的是:由于
-mafengwo.cn在一个IP地址短时间发出多次请求后会要求填写页面验证码,所以MFW_main.py并没有递归执行——这样做意义不大，因为程
-序在执行一段时间后,总会自己停止.
+    mafengwo.cn在一个IP地址短时间发出多次请求后会要求填写页面验证码,所以MFW_main.py并没有递归执行——这样做意义不大，因为程
+    序在执行一段时间后,总会自己停止.
     4. 结果会存储在 `mafengwo`数据库中,用户数据存储在`tourist`表中,旅游日志数据存储在`travelNote`表中。
