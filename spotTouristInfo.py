@@ -9,16 +9,29 @@ import requests
 from pyquery import PyQuery as pq
 import csv
 
-def a_print(a):
-	print a
+PREFIX = "www.mafengwo.cn"
 
-def main(spotUrl):
+def getPersonalUrls(spotUrl):
 	document = requests.get(spotUrl)
 	document.encoding = "utf-8"
 	d = pq(document.text)
-	aElements = d(".tn-wrapper .hasxjicon a")
-	for i in range(len(aElements)):
-		print aElements.eq(i).attr('href')
+	authors = d(".author")
+	personalUrls = []
+	for a in range(0,len(authors)):
+		personalUrls.append(PREFIX+authors.eq(a)("a").eq(0).attr('href'))
+	return personalUrls
+
+def getPersonalNotesUrls(personalUrls):
+	personalNotesUrls = []
+	for url in personalUrls:
+		personalNotesUrls.append(url[:-5]+"/note"+url[-5:])
+	return personalNotesUrls
+
+def main(spotUrl):
+	personalUrls = getPersonalUrls(spotUrl)
+	personalNotesUrls = getPersonalNotesUrls(personalUrls)
+	for url in personalNotesUrls:
+		print url
 
 if __name__ == '__main__':
-	main("http://www.mafengwo.cn/travel-scenic-spot/mafengwo/10195.html")
+	main("http://www.mafengwo.cn/yj/10195/1-0-1.html")
