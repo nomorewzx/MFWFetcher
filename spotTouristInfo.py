@@ -10,7 +10,7 @@ from pyquery import PyQuery as pq
 import re
 import csv
 
-PREFIX = "www.mafengwo.cn"
+PREFIX = "http://www.mafengwo.cn"
 USER_INFO = {}
 
 def getPersonalUrls(spotUrl):
@@ -43,8 +43,8 @@ def getUserResidence(pqPage):
 		residence = nameAndResidence[index+1:-1]
 		return residence
 	except:
-		print 'fail to find residence in '+personalNotesUrl
-		return ''
+		print 'fail to find residence of '+nameAndResidence
+		return 'null'
 
 def getNumNotes(pqPage):
 	d = pqPage
@@ -59,14 +59,23 @@ def getUserInfo(personalNotesUrl):
 	userId = getUserId(personalNotesUrl)
 	residence = getUserResidence(d)
 	numNotes = getNumNotes(d)
+	USER_INFO[userId] = (residence, numNotes)
 
-	return userId, residence, numNotes
+def getUsers(spotUrl):
+	personalNotesUrls = getPersonalNotesUrls(spotUrl)
+	for url in personalNotesUrls:
+		getUserInfo(url)
+
+
+def genSpotUrlPages(spotUrl):
+	for i in range(1,3):
+		url = spotUrl % i
+		print "processing page "+url+"................"
+		getUsers(url)
 
 def main(spotUrl):
-	userId, residence, numNotes = getUserInfo("http://www.mafengwo.cn/u/paksonwong/note.html")
-	print userId
-	print residence
-	print numNotes
+	genSpotUrlPages(spotUrl) 
+	
 
 if __name__ == '__main__':
-	main("http://www.mafengwo.cn/yj/10195/1-0-1.html")
+	main("http://www.mafengwo.cn/yj/10195/1-0-%d.html")
