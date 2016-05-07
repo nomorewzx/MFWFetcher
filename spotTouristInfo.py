@@ -48,6 +48,10 @@ def getUserResidence(pqPage):
 
 def getNumNotes(pqPage):
 	d = pqPage
+	if not d(".MAvaNums strong").eq(0):
+		print 'fail to find the user url.......QUIT...'
+		exit()
+
 	numNotes = d(".MAvaNums strong").eq(0).text()
 	return numNotes
 
@@ -61,21 +65,39 @@ def getUserInfo(personalNotesUrl):
 	numNotes = getNumNotes(d)
 	USER_INFO[userId] = (residence, numNotes)
 
+def writeToCSV(infoDict,url):
+	writerRows = []
+	for k,v in infoDict.items():
+		row = (k,v[0],v[1])
+		writerRows.append(row)
+
+	filename = re.search(r'\d{2,}',url).group()
+	with open(filename+'.csv', 'a') as csvfile:
+		writer = csv.writer(csvfile)
+		for row in writerRows:
+			writer.writerow(row)
+
+
 def getUsers(spotUrl):
 	personalNotesUrls = getPersonalNotesUrls(spotUrl)
 	for url in personalNotesUrls:
 		getUserInfo(url)
+	writeToCSV(USER_INFO,spotUrl)
 
 
-def genSpotUrlPages(spotUrl):
-	for i in range(1,3):
+
+def genSpotUrlPages(spotUrl,startPage,endPage=10):
+	if startPage > endPage:
+		print 'Page number wrong, pelase check.......'
+		exit()
+	for i in range(startPage,endPage+1):
 		url = spotUrl % i
 		print "processing page "+url+"................"
 		getUsers(url)
 
-def main(spotUrl):
-	genSpotUrlPages(spotUrl) 
+def main(spotUrl,startPage,endPage):
+	genSpotUrlPages(spotUrl,startPage,endPage) 
 	
 
 if __name__ == '__main__':
-	main("http://www.mafengwo.cn/yj/10195/1-0-%d.html")
+	main("http://www.mafengwo.cn/yj/10195/1-0-%d.html",1,1)
