@@ -50,7 +50,6 @@ def getNumNotes(pqPage):
 	d = pqPage
 	if not d(".MAvaNums strong").eq(0):
 		print 'fail to find the user url.......QUIT...'
-		exit()
 
 	numNotes = d(".MAvaNums strong").eq(0).text()
 	return numNotes
@@ -72,7 +71,7 @@ def writeToCSV(infoDict,url):
 		writerRows.append(row)
 
 	filename = re.search(r'\d{2,}',url).group()
-	with open(filename+'.csv', 'a') as csvfile:
+	with open(filename+'.csv', 'ab') as csvfile:
 		writer = csv.writer(csvfile)
 		for row in writerRows:
 			writer.writerow(row)
@@ -81,10 +80,8 @@ def writeToCSV(infoDict,url):
 def getUsers(spotUrl):
 	personalNotesUrls = getPersonalNotesUrls(spotUrl)
 	for url in personalNotesUrls:
+		print 'processing tourist '+url
 		getUserInfo(url)
-	writeToCSV(USER_INFO,spotUrl)
-
-
 
 def genSpotUrlPages(spotUrl,startPage,endPage=10):
 	if startPage > endPage:
@@ -94,10 +91,11 @@ def genSpotUrlPages(spotUrl,startPage,endPage=10):
 		url = spotUrl % i
 		print "processing page "+url+"................"
 		getUsers(url)
+	writeToCSV(USER_INFO,spotUrl)
 
 def main(spotUrl,startPage,endPage):
 	genSpotUrlPages(spotUrl,startPage,endPage) 
 	
 
 if __name__ == '__main__':
-	main("http://www.mafengwo.cn/yj/10195/1-0-%d.html",1,1)
+	main("http://www.mafengwo.cn/yj/10284/1-0-%d.html",1,30)
