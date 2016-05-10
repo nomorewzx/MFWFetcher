@@ -1,4 +1,4 @@
-#*-* coding: utf-8 *-*
+#-*- coding: utf-8 -*-
 """
 	This script collects information of tourists who visited the specific scenic spot.
 	To accomplish goal above, we need firstly specify the spot url page, from which travelnotes can be parsed.
