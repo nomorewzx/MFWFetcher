@@ -1,5 +1,4 @@
 *.pyc
 travelNotesInfoBox
 *~
-*test*
-*csv
+\d{2,}\.csv
