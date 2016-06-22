@@ -4,6 +4,9 @@
 	To accomplish goal above, we need firstly specify the spot url page, from which travelnotes can be parsed.
 	Then the script parse the tourist home page url from travel note page.
 	At last, the information of the tourist would be collected from tourist home page.
+	该脚本抓取访问特定目的地的游客特征，包括游客客源地以及游客所发表游记数目。并将游记保存于"目的地编号.csv"文件中。
+	抓取的原理是，首先找到汇集了目的地游记的页面，在蚂蜂窝旅行网中，该页面格式为http://www.mafengwo.cn/yj/目的地编号/1-0-页码.html,
+	其中，目的地编号可以通过在蚂蜂窝网站中搜索目的地得到。页码为抓取第几页的游记。
 """
 import requests
 from pyquery import PyQuery as pq
@@ -94,8 +97,8 @@ def genSpotUrlPages(spotUrl,startPage,endPage=10):
 	writeToCSV(USER_INFO,spotUrl)
 
 def main(spotUrl,startPage,endPage):
-	genSpotUrlPages(spotUrl,startPage,endPage) 
-	
+	genSpotUrlPages(spotUrl,startPage,endPage)
+
 
 if __name__ == '__main__':
 	main("http://www.mafengwo.cn/yj/10284/1-0-%d.html",1,30)

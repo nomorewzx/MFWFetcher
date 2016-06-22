@@ -3,7 +3,7 @@ import MySQLdb
 import MFWurl
 import re
 def MFWConnect():
-    conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='4364410',db='mafengwo',charset='utf8')
+    conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='12345678',db='mafengwo',charset='utf8')
     return conn
 
 def insertUrls(urls, table):
@@ -34,7 +34,7 @@ def getTravelNoteUrl():
         n = cur.execute(query)
         print "%d urls is fetched!!!!" % n
         urls = cur.fetchall()
-        return 
+        return
     except MySQLdb.Error, e:
         print "error occurs when getting urls from table travelNoteUrl %d,%s" % (e.args[0],e.args[1])
 
@@ -53,7 +53,7 @@ def deletePersonalUrl(url):
         conn.close()
         return True
     except MySQLdb.Error, e:
-        print 'error occurs when delete meaningless personal url %d,%s' % (e.args[0],e.args[1]) 
+        print 'error occurs when delete meaningless personal url %d,%s' % (e.args[0],e.args[1])
 
 def deleteTravelNoteUrl(url):
     try:

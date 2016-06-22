@@ -1,18 +1,18 @@
 CREATE DATABASE   mafengwo ;
 USE mafengwo
-	CREATE  TABLE   personalUrl 
+	CREATE  TABLE   personalUrl
 	(
 		uid VARCHAR(30) Primary Key,
 		perUrl VARCHAR(50)
 	);
-	CREATE  TABLE  tourist 
+	CREATE  TABLE  tourist
 	(
-                         uid VARCHAR(30) Primary Key,
-                         uname VARCHAR(20) CHARACTER SET 'utf8',
-                         gender ENUM('female','male'),
-                         residence VARCHAR(15) CHARACTER SET 'utf8'
+    uid VARCHAR(30) Primary Key,
+    uname VARCHAR(20) CHARACTER SET 'utf8',
+    gender ENUM('female','male'),
+    residence VARCHAR(15) CHARACTER SET 'utf8'
 	);
-	CREATE  TABLE  travelNote 
+	CREATE  TABLE  travelNote
 	(
 		nid VARCHAR(30) Primary Key,
 		uid VARCHAR(30),

@@ -1,7 +1,11 @@
 #-*- coding: utf-8 -*-
+# 该文件用于批量递归地执行数据抓取操作。步骤为：
+# 1. 从personalURL表中，抽取一个用户URL作为种子URL开始抓取操作。
+# 2. 删除该URL；
+# 3. 执行1.
 import mafengwo
 import travelnote
-import 	MFWdb
+import MFWdb
 import time
 
 def fetchUsers():

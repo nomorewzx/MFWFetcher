@@ -2,9 +2,8 @@
 # there are url of user's travel notes which contain information such as user's id, days of traveling, number of people who travels, expenses of travel of everyone
 #the date of travel and the type of travel(through angencies or travel personaly) and, of course,  where did the author visit during the tour.
 #so, it is greatly useful to fetch information from travel notes.
-#http://www.mafengwo.cn/i/912729.html
-#http://www.mafengwo.cn/i/1292266.html
-#http://www.mafengwo.cn/i/2991875.html
+# 用户的游记中包含有诸多信息，例如用户ID，旅游天数，旅游人数，人均花费，旅游开始日期以及旅游目的地。
+# 本脚本即用于提取以上信息(如果存在的话)，并存入mafengwo数据库中的travelnote表中。
 import codecs
 import urllib
 import urllib2
@@ -69,7 +68,7 @@ class TravelNote:
         reObj = re.compile(s,re.S)
         noteId = reObj.findall(userNoteInfo)
         return noteId[0]
-    #get time of note published by users. 
+    #get time of note published by users.
     def GetNoteDate(self,page):
         unicodePage = page.decode('utf-8')
         s = r'<span class="date">(.*?)</span>'
@@ -81,12 +80,12 @@ class TravelNote:
             reObjDate = re.compile(s1,re.S)
             dates = reObjDate.findall(noteTime[0])
             print dates[0]
-            return dates[0] 
+            return dates[0]
         except IndexError, e:
             print 'no note published date found!'
             return 'NoNoteDate'
 
-    #the function GetTripInfo() fetch basic information 
+    #the function GetTripInfo() fetch basic information
     def GetTripInfo(self,page):
         unicodePage = page.decode('utf-8')
         s = r'<div class="basic-info">(.*?)</div>'

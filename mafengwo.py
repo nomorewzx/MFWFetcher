@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+# 该脚本以蚂蜂窝旅行网中的用户为中心进行数据抓取。抓取的步骤如下：
+# 1. 指定一个用户主页URL；
+# 2. 抓取最近访问用户主页的其它用户URL，并放入mafengwo数据库的personalURL表中；
+# 3. 抓取该用户基本信息，存入mafengwo数据库的tourist表中；
+# 4. 抓取用户所发表的所有游记信息，并将信息放入travelnote表中，该步骤使用travelnote.py完成
+
 import urllib
 import urllib2
 import re
@@ -79,7 +85,7 @@ class MaFengWo(object):
                  return gender
             else:
                 gender = 'male'
-                return gender 
+                return gender
     #fetch personal urls from fansList and return lists that contains urls.
     #leaving resolving and storing urls to start() function
     def GetPersonalUrl(self,page):
@@ -88,7 +94,7 @@ class MaFengWo(object):
         lists = reObjRaw.findall(unicodePage)
         reObj = re.compile(r'<span><a href="(.*?)">',re.S)
         personalUrls = reObj.findall(lists[0])
-        return personalUrls           
+        return personalUrls
     #fetch travel notes urls and returns lists that contains notes urls. leaving resolving and storing urls to start() funciton
     def GetTravelNoteUrls(self,page):
         unicodePage = page.decode('utf-8')
@@ -155,7 +161,7 @@ class MaFengWo(object):
             n = cur.execute(query,param)
         except MySQLdb.Error, e:
             print "Mysql Error %d: %s" % (e.args[0], e.args[1])
-            return None 
+            return None
         finally:
             cur.close()
             conn.commit()
