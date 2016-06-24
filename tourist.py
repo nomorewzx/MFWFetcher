@@ -9,6 +9,9 @@ import requests
 from pyquery import PyQuery as pq
 import MFWdb
 import geocode
+import re
+
+PREFIX = "http://www.mafengwo.cn"
 
 # 根据用户URL抓取页面
 def getUserPage(userUrl):
@@ -17,13 +20,20 @@ def getUserPage(userUrl):
 	d = pq(document.text)
 	return d
 
-# 抓取用户基本信息，包括name，gender以及residence
+# 抓取用户基本信息，包括id,name,gender,residence以及residence的经纬度(lon,lat)
 def getBasicInfo(userUrl):
 	page = getUserPage(userUrl)
+	uid = getID(userUrl)
 	name = getName(page)
 	gender = getGender(page)
 	residence,lon,lat = getResidence(page)
-	return (name,gender,residence,lon,lat)
+	return (uid,name,gender,residence,lon,lat)
+
+# 从用户主页URL中提取uid
+def getID(userUrl):
+	match = re.search(r'/u/(.*)\.html',userUrl)
+	if match:
+		return match.group(1)
 
 def getName(page):
 	return page(".MAvaName").text()
@@ -53,14 +63,20 @@ def LatlonResidence(residence):
 			return v
 
 # 获取用户主页中的最近访问用户列表
-def getSetofRecentViewers(userUrl):
+def getFollowingList(userUrl):
+	foList= []
 	listOfRecentViewers = []
 	d = getUserPage(userUrl)
-	return d(".MUsersAtom ul.clearfix li").eq(0).attr('href')
+	liList = d("#_j_followcnt ul li p a")
+	liCount = liList.length
+	for i in range(0,liCount):
+		foList.append(PREFIX+liList.eq(i).attr("href"))
+	return foList
 
 def main():
-	# basicInfo = getBasicInfo("http://www.mafengwo.cn/u/nopa13.html")
-	# print basicInfo
+	basicInfo = getBasicInfo("http://www.mafengwo.cn/u/nopa13.html")
+	print basicInfo
+	print getFollowingList("http://www.mafengwo.cn/u/nopa13.html")
 
 if __name__ == '__main__':
 	main()
