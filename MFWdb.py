@@ -2,20 +2,28 @@
 import MySQLdb
 import MFWurl
 import re
+
+def getUserID(userUrl):
+    match = re.search(r'/u/(.*)\.html',userUrl)
+    if match:
+        return match.group(1)
+
 def MFWConnect():
     conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='12345678',db='mafengwo',charset='utf8')
     return conn
 
-def insertUrls(urls, table):
+def getInsertValue(userUrl):
+    uid = getUserID(userUrl)
+    return value = (uid,userUrl)
+
+def insertUserUrlList(userUrlList):
     try:
         conn = MFWConnect()
         cur = conn.cursor()
         insertValues = []
-        for url in urls:
-            reObj = re.compile(r'([0-9]{2,})')
-            Id = reObj.findall(url)
-            url = MFWurl.toAbsUrl(url)
-            insertValues.append([Id[0],url])
+        for url in userUrlList:
+            value = getInsertValue(url)
+            insertValues.append(value)
         query = "insert into "+table+" values (%s, %s)"
         n = cur.executemany(query, insertValues)
         cur.close()
