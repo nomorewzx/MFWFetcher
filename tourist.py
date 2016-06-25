@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 # 该脚本以蚂蜂窝旅行网中的用户为中心进行数据抓取。抓取的步骤如下：
 # 1. 指定一个用户主页URL；
-# 2. 抓取最近访问用户主页的其它用户URL，并放入mafengwo数据库的personalURL表中；
+# 2. 抓取该用户关注的其它用户URL，并放入mafengwo数据库的personalURL表中；
 # 3. 抓取该用户基本信息，存入mafengwo数据库的tourist表中；
 # 4. 抓取用户所发表的所有游记信息，并将信息放入travelnote表中，该步骤使用travelnote.py完成
 import MySQLdb
@@ -10,27 +10,31 @@ from pyquery import PyQuery as pq
 import MFWdb
 import geocode
 import re
+import travelnote
 
 PREFIX = "http://www.mafengwo.cn"
 
 # 根据用户URL抓取页面
 def getUserPage(userUrl):
-	document = requests.get(userUrl)
-	document.encoding = 'utf-8'
-	d = pq(document.text)
-	return d
+	try:
+		document = requests.get(userUrl)
+		document.encoding = 'utf-8'
+		d = pq(document.text)
+		return d
+	except requests.ConnectionError, e:
+		print 'requests %s error %d, %s' % (userUrl,e.args[0],e.args[1])
 
 # 抓取用户基本信息，包括id,name,gender,residence以及residence的经纬度(lon,lat)
 def getBasicInfo(userUrl):
 	page = getUserPage(userUrl)
-	uid = getID(userUrl)
+	uid = getUserID(userUrl)
 	name = getName(page)
 	gender = getGender(page)
 	residence,lon,lat = getResidence(page)
 	return (uid,name,gender,residence,lon,lat)
 
 # 从用户主页URL中提取uid
-def getID(userUrl):
+def getUserID(userUrl):
 	match = re.search(r'/u/(.*)\.html',userUrl)
 	if match:
 		return match.group(1)
@@ -46,12 +50,11 @@ def getGender(page):
 
 def getResidence(page):
 	residence = page(".MAvaPlace").attr('title')
-	if residence != '':
+	if residence != None:
 		latlon = LatlonResidence(residence)
-		if len(latlon) == 2:
-			return residence,latlon[0],latlon[1]
-		else:
-			return residence,0,0
+		return residence,latlon[0],latlon[1]
+	else:
+		return '',0,0
 
 # 将用户居住地转化为经纬度值并返回（经度，纬度）
 def LatlonResidence(residence):
@@ -61,6 +64,7 @@ def LatlonResidence(residence):
 			return v
 		elif residence in k.decode('utf-8'):
 			return v
+	return (0,0)
 
 # 获取用户主页中的最近访问用户列表
 def getFollowingList(userUrl):
@@ -73,7 +77,7 @@ def getFollowingList(userUrl):
 		foList.append(PREFIX+liList.eq(i).attr("href"))
 	return foList
 
-def fetchUser(url):
+def fetchUserAndNotes(url):
 	# 1.获取用户基本信息basic并插入tourist表
 	basicInfo = getBasicInfo(url)
 	MFWdb.insertUserBasicInfo(basicInfo)
@@ -85,9 +89,17 @@ def fetchUser(url):
 	# 3.从personalUrl表中，删除已抓取过的用户url
 	MFWdb.deleteUserUrl(url)
 
+	# 4.获取用户的游记url列表，并抓取游记信息，存入travelnote表中
+	noteUrlList = travelnote.getNoteUrlList(url)
+	for noteUrl in noteUrlList:
+		noteInfo = travelnote.fetchTravelNote(noteUrl)
+		# 将uid插入noteInfo中，得到(nid,uid,travelDate,travelDays,travelCost,spot,lon,lat)
+		noteInfo.insert(1,basicInfo[0])
+		MFWdb.insertTravelNoteInfo(noteInfo)
+
 def main():
-	url = "http://www.mafengwo.cn/u/nopa13.html"
-	fetchUser(url)
+	url = u"http://www.mafengwo.cn/u/11003586.html"
+	fetchUserAndNotes(url)
 
 if __name__ == '__main__':
 	main()

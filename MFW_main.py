@@ -3,13 +3,12 @@
 # 1. 从personalURL表中，抽取一个用户URL作为种子URL开始抓取操作。
 # 2. 删除该URL；
 # 3. 执行1.
-import mafengwo
+import tourist
 import travelnote
 import MFWdb
 import time
-
-def fetchUsers():
-    maFengWo = mafengwo.MaFengWo()
+import requests
+def fetchMany():
     conn = MFWdb.MFWConnect()
     cur = conn.cursor()
     cur.execute('select perUrl from personalUrl')
@@ -17,9 +16,12 @@ def fetchUsers():
     for personalUrl in personalUrls:
         #sleep for 2 seconds.
         time.sleep(2)
-        maFengWo.startMaFengWo(personalUrl[0])
-        MFWdb.deletePersonalUrl(personalUrl[0])
+        try:
+            print personalUrl
+            tourist.fetchUserAndNotes(personalUrl[0])
+        except requests.ConnectionError,e:
+            print 'error occurs in requests' %(personalUrl)
     cur.close()
     conn.close()
 if __name__ == '__main__':
-        fetchUsers()
+        fetchMany()

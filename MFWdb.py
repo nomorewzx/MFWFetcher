@@ -17,6 +17,7 @@ def getUserUrlPairValue(userUrl):
     value = (uid,userUrl)
     return value
 
+# 将用户所关注的用户的URL列表插入personalUrl表
 def insertUserUrlList(userUrlList):
     try:
         conn = MFWConnect()
@@ -37,7 +38,7 @@ def insertUserUrlList(userUrlList):
         cur.close()
         conn.close()
 
-# delete user's url.
+# 从PersonalUrl表中删除url.
 def deleteUserUrl(url):
     try:
         conn  = MFWConnect()
@@ -55,6 +56,7 @@ def deleteUserUrl(url):
         cur.close()
         conn.close()
 
+# 将用户基本信息插入tourist表
 def insertUserBasicInfo(basicInfoList):
     try:
         conn = MFWConnect()
@@ -69,5 +71,20 @@ def insertUserBasicInfo(basicInfoList):
     finally:
         cur.close()
         conn.close()
+
+def insertTravelNoteInfo(noteInfoList):
+    try:
+        conn = MFWConnect()
+        cur = conn.cursor()
+        query = "insert into travelnote values (%s,%s,%s,%s,%s,%s,%s,%s)"
+        cur.execute(query,noteInfoList)
+        conn.commit()
+        print 'insert %s into travelnote table' % noteInfoList[0]
+    except MySQLdb.Error, e:
+        print 'insert into travelnote error %d, %s' % (e.args[0], e.args[1])
+    finally:
+        cur.close()
+        conn.close()
+
 if __name__ == '__main__':
     print "......"

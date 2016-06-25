@@ -1,194 +1,113 @@
-#*-* coding: utf-8 *-*
-# there are url of user's travel notes which contain information such as user's id, days of traveling, number of people who travels, expenses of travel of everyone
-#the date of travel and the type of travel(through angencies or travel personaly) and, of course,  where did the author visit during the tour.
-#so, it is greatly useful to fetch information from travel notes.
-# 用户的游记中包含有诸多信息，例如用户ID，旅游天数，旅游人数，人均花费，旅游开始日期以及旅游目的地。
-# 本脚本即用于提取以上信息(如果存在的话)，并存入mafengwo数据库中的travelnote表中。
-import codecs
-import urllib
-import urllib2
-import re
+#-*- coding:utf-8 -*-
+"""
+	该脚本抓取一个游记页面，并将游记基本信息存入mafengwo数据库中的travelnote表中。
+"""
 import MySQLdb
-import mafengwo
+import requests
+from pyquery import PyQuery as pq
 import MFWdb
-class TravelNote:
-    def __init__(self):
-        self.HtmlTool = mafengwo.HtmlTools()
-    #get page of urlTravelNote
-    def GetTravelNote(self,myNoteUrl=''):
-        myUrl = myNoteUrl
-        myUrlReq = urllib2.Request(myUrl)
-        myUrlReq.add_header('User-Agent','Mozilla/4.0')
-        try:
-            myResp = urllib2.urlopen(myUrlReq)
-            myPage = myResp.read()
-            myResp.close()
-            return myPage
-        except:
-            print 'fail to connect %s' % myUrl
-            return None
-        finally:
-            MFWdb.deleteTravelNoteUrl(myUrl)
-    #GetSpot() fetch the spot from block <p class="txt">.......</p>
-    def GetSpot(self,page):
-        unicodePage = page.decode('utf-8')
-        s = r'<p class="txt">(.*?)</p>'
-        reObj = re.compile(s,re.S)
-        try:
-            spots = reObj.findall(unicodePage)
-            spot = self.HtmlTool.ReplaceChar(spots[0])
-            return spot
-        except IndexError,e:
-            print 'no spot found!'
-            return 'NoSpot'
-    #GetUserNoteInfo() fetch the div block <div class="a_con_text cont"......> which contains userId and dataId(note ID)
-    def GetUserNoteInfo(self,page):
-        unicodePage = page.decode('utf-8')
-        s = r'<div class="a_con_text cont".*?>'
-        reObjRaw = re.compile(s,re.S)
-        try:
-            userNoteInfo = reObjRaw.findall(unicodePage)
-            return userNoteInfo[0]
-        except IndexError,e:
-        	print 'no userInfo found'
-        	return 'NoUserInfo'
-    #GetUserId() fetch userId from div block of GetUserNoteInfo()
-    def GetUserId(self,userNoteInfo):
-        if userNoteInfo == 'NoUserInfo':
-        	return 'No UserId'
-        s = r'ownerid="([0-9]{1,})"'
-        reObj = re.compile(s,re.S)
-        userId = reObj.findall(userNoteInfo)
-        return userId[0]
-    #GetNoteId() fetch note id from div block of GetUserNoteInfo()
-    def GetNoteId(self,userNoteInfo):
-        if userNoteInfo == 'NoUserInfo':
-            return 'No UserId'
-        s = r'dataid="([0-9]{1,})"'
-        reObj = re.compile(s,re.S)
-        noteId = reObj.findall(userNoteInfo)
-        return noteId[0]
-    #get time of note published by users.
-    def GetNoteDate(self,page):
-        unicodePage = page.decode('utf-8')
-        s = r'<span class="date">(.*?)</span>'
-        reObj = re.compile(s,re.S)
-        try:
-            noteTime = reObj.findall(unicodePage)
-            print noteTime[0]
-            s1  = r'[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}'
-            reObjDate = re.compile(s1,re.S)
-            dates = reObjDate.findall(noteTime[0])
-            print dates[0]
-            return dates[0]
-        except IndexError, e:
-            print 'no note published date found!'
-            return 'NoNoteDate'
+import geocode
+import re
+import tourist
 
-    #the function GetTripInfo() fetch basic information
-    def GetTripInfo(self,page):
-        unicodePage = page.decode('utf-8')
-        s = r'<div class="basic-info">(.*?)</div>'
-        reObj = re.compile(s,re.S)
-        try:
-            infoBoxes = reObj.findall(unicodePage)
-            return infoBoxes[0]
-        except IndexError,e:
-            return 'NoInfoBox'
+PREFIX = "http://www.mafengwo.cn"
 
-    def GetDate(self,infoBox):
-        if infoBox == 'NoInfoBox':
-            return 'NoDateFound'
-        s  = r'[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}'
-        try:
-            reObj  = re.compile(s,re.S)
-            date = reObj.findall(infoBox)
-            return date[0]
-        except IndexError,e:
-            print 'NoTravelDateFound'
-            return 'NoTravelDateFound'
+def getNotePage(noteUrl):
+	document = requests.get(noteUrl)
+	document.encoding = 'utf-8'
+	d = pq(document.text)
+	return d
 
-    def GetPeople(self,infoBox):
-        if infoBox == 'NoInfoBox':
-            return 'NoDateFound'
-        s = r'<li class="item-people"><i></i>..<span><b>(.*?)</b></span></li>'
-        try:
-            reObj = re.compile(s,re.S)
-            people = reObj.findall(infoBox)
-            return people
-        except IndexError, e:
-            return 'No people found'
+def getNoteID(noteUrl):
+	match = re.search(r'/i/(.*)\.html',noteUrl)
+	if match:
+		return match.group(1)
 
-    def GetPeopleAverageCost(self,infoBox):
-        if infoBox == 'NoInfoBox':
-            return 'NoCostFound'
-        s = r'<li class="item-cost">.*?</li>'
-        reObjRaw = re.compile(s,re.S)
-        rawCost = reObjRaw.findall(infoBox)
-        reObj = re.compile(r'[0-9]{1,}')
-        try:
-            peopleAverageCost = reObj.findall(rawCost[0])
-            return peopleAverageCost[0]
-        except IndexError, e:
-            return "NoCostFound"
+def getUserID(page):
+	print '.'
+	print page(".person").length
+	# userID = tourist.getUserID(userUrl)
+	# return userID
 
-    def GetTravelDays(self,infoBox):
-        if infoBox == 'NoInfoBox':
-            return 'NoDateFound'
-        s = r'<li class="item-days">.*?</li>'
-        reObjRaw = re.compile(s,re.S)
-        rawDays = reObjRaw.findall(infoBox)
-        reObj = re.compile(r'[0-9]{1,}',re.S)
-        try:
-            travelDays = reObj.findall(rawDays[0])
-            return travelDays[0]
-        except IndexError,e:
-            return 'NoTravelDaysFound'
-    #travel-type and travel-people is for future to fetch
+# 获取旅行开始日期
+def getTravelDate(page):
+	date = page(".time").text()
+	if date != '':
+		match = re.search(r'\d{4}-\d{2}-\d{2}',date)
+		if match:
+			return match.group(0)
+	else:
+		return '0000-00-00'
+
+# 获取旅行天数
+def getTravelDays(page):
+	day = page(".day").text()
+	if day != '':
+		match = re.search(r'\d{1,2}',day)
+		if match:
+			return match.group(0)
+	else:
+		return 0
+
+# 获取人均消费
+def getTravelPersonalCost(page):
+	cost = page(".cost").text()
+	if cost != '':
+		match = re.search(r'\d{1,}',cost)
+		if match:
+			return match.group(0)
+	else:
+		return 0
+
+def LatlonSpot(spot):
+	geoCodeDict = geocode.genGeoCodeDict()
+	for k,v in geoCodeDict.items():
+		if k.decode('utf-8') in spot:
+			return v
+		elif spot in k.decode('utf-8'):
+			return v
+	return (0,0)
 
 
-    #GetSpotsInfo() fetch information of spots that traveler had been.
-    def GetSpotsInfo(self,page):
-        unicodePage = page.decode('utf-8')
-        s = r'<div class="keyword-info">(.*?)</div>'
-        reObj = re.compile(s,re.S)
-        spotsInfo = reObj.findall(unicodePage)
-        return spotsInfo[0]
+# 获取目的地
+def getSpot(page):
+	spot = page(".relation_mdd a").text()
+	if spot != '':
+		latlon = LatlonSpot(spot)
+		return spot, latlon[0], latlon[1]
+	else:
+		return 'NoSpot',0,0
 
-    def startTravelNote(self,myNoteUrl=''):
-        page = self.GetTravelNote(myNoteUrl)
-        spot = self.GetSpot(page)
-        noteDate = self.GetNoteDate(page)
-        print 'Note Date is %s' % noteDate
-        print 'SPOT IS: %s' % spot
-        userNoteInfo = self.GetUserNoteInfo(page)
-        userId = self.GetUserId(userNoteInfo)
-        print "THE USER ID IS %s " % userId
-        noteId = self.GetNoteId(userNoteInfo)
-        print "THE NOTE ID IS  %s" % noteId
-        infoBoxes = self.GetTripInfo(page)
-        if infoBoxes == -1 :
-            return None
-        date = self.GetDate(infoBoxes)
-        print date
-        peopleACost = self.GetPeopleAverageCost(infoBoxes)
-        print peopleACost
-        travelDays = self.GetTravelDays(infoBoxes)
-        print travelDays
-        print 'infobox is over!!!!!!'
-        try:
-            conn = MFWdb.MFWConnect()
-            cur = conn.cursor()
-            param = [noteId, userId, date, travelDays, peopleACost, spot, noteDate]
-            query = "insert into travelNote (nid, uid, travelDate, travelDays,travelCost,spot,noteDate) values (%s, %s, %s, %s, %s, %s,%s)"
-            n = cur.execute(query,param)
-            cur.close()
-            conn.commit()
-            conn.close()
-        except MySQLdb.Error, e:
-            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
-__author__ = 'zhenxuan wang'
+def getNoteInfo(noteUrl):
+	page = getNotePage(noteUrl)
+	nid = getNoteID(noteUrl)
+	travelDate = getTravelDate(page)
+	travelDays = getTravelDays(page)
+	travelPersonalCost = getTravelPersonalCost(page)
+	spot,lon,lat = getSpot(page)
+	return [nid,travelDate,travelDays,travelPersonalCost,spot,lon,lat]
+
+def getNoteUrlList(userUrl):
+	noteList = []
+	userNoteUrl = userUrl[:-5]+"/note"+userUrl[-5:]
+	document = requests.get(userNoteUrl)
+	document.encoding = 'utf-8'
+	d = pq(document.text)
+	notes = d(".notes_list li")
+	for i in range(0,len(notes)):
+		noteUrl = notes.eq(i)("a").attr('href')
+		noteList.append(PREFIX+noteUrl)
+	return noteList
+
+def fetchTravelNote(noteUrl):
+	noteInfo = getNoteInfo(noteUrl)
+	return noteInfo
+
+def main():
+	noteUrl = "http://www.mafengwo.cn/i/5491437.html"
+	# noteUrlWithourInformation = "http://www.mafengwo.cn/i/3194957.html"
+	# fetchTravelNote(noteUrl)
+	noteInfo = getNoteInfo(noteUrl)
+	print noteInfo
 if __name__ == '__main__':
-    print 'start travel_info.py'
-    travelNote = TravelNote()
-    travelNote.startTravelNote('http://www.mafengwo.cn/i/1171316.html')
+	main()
