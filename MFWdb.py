@@ -12,9 +12,10 @@ def MFWConnect():
     conn = MySQLdb.connect(host = 'localhost',user = 'root',passwd='12345678',db='mafengwo',charset='utf8')
     return conn
 
-def getInsertValue(userUrl):
+def getUserUrlPairValue(userUrl):
     uid = getUserID(userUrl)
-    return value = (uid,userUrl)
+    value = (uid,userUrl)
+    return value
 
 def insertUserUrlList(userUrlList):
     try:
@@ -22,61 +23,51 @@ def insertUserUrlList(userUrlList):
         cur = conn.cursor()
         insertValues = []
         for url in userUrlList:
-            value = getInsertValue(url)
+            value = getUserUrlPairValue(url)
             insertValues.append(value)
-        query = "insert into "+table+" values (%s, %s)"
+        query = "insert into personalUrl values (%s, %s)"
         n = cur.executemany(query, insertValues)
-        cur.close()
         conn.commit()
-        conn.close()
+        print 'insert %d url into personalUrl table' % len(userUrlList)
         return n
     except MySQLdb.Error,e:
-        print 'insert to table %s error%d, %s' % (table, e.args[0], e.args[1])
+        print 'insert to personalUrl error%d, %s' % (e.args[0], e.args[1])
         return -1
+    finally:
+        cur.close()
+        conn.close()
 
-def getTravelNoteUrl():
-    try:
-        conn = MFWConnect()
-        cur = conn.cursor()
-        query = "select noteUrl from travelNoteUrl"
-        n = cur.execute(query)
-        print "%d urls is fetched!!!!" % n
-        urls = cur.fetchall()
-        return
-    except MySQLdb.Error, e:
-        print "error occurs when getting urls from table travelNoteUrl %d,%s" % (e.args[0],e.args[1])
-
-# delete meaningless personla urls.
-def deletePersonalUrl(url):
+# delete user's url.
+def deleteUserUrl(url):
     try:
         conn  = MFWConnect()
         cur = conn.cursor()
-        reObj = re.compile(r'([0-9]{2,})')
-        Id = reObj.findall(url)
+        value = getUserUrlPairValue(url)
         query = 'delete from personalUrl where uid= %s'
-        param = (Id[0])
+        param = (value[0])
         cur.execute(query,param)
         conn.commit()
-        cur.close()
-        conn.close()
+        print "delete "+url+"..."
         return True
     except MySQLdb.Error, e:
         print 'error occurs when delete meaningless personal url %d,%s' % (e.args[0],e.args[1])
+    finally:
+        cur.close()
+        conn.close()
 
-def deleteTravelNoteUrl(url):
+def insertUserBasicInfo(basicInfoList):
     try:
         conn = MFWConnect()
         cur = conn.cursor()
-        reObj = re.compile(r'([0-9]{2,})')
-        Id = reObj.findall(url)
-        query = 'delete from travelNoteUrl where nid = %s'
-        param = Id[0]
-        cur.execute(query,param)
+        query = "insert into tourist values (%s,%s,%s,%s,%s,%s)"
+        cur.execute(query, basicInfoList)
         conn.commit()
+        print 'insert %s into tourist table' % basicInfoList[1]
+    except MySQLdb.Error,e:
+        print 'insert into tourist table error %d, %s' % (e.args[0], e.args[1])
+        return -1
+    finally:
         cur.close()
         conn.close()
-        return True
-    except MySQLdb.Error, e:
-        print 'error occurs when delete note url that has been fetched %d,%s ' % (e.args[0],e.args[1])
 if __name__ == '__main__':
-    getTravelNoteUrl()
+    print "......"

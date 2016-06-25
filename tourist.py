@@ -73,10 +73,21 @@ def getFollowingList(userUrl):
 		foList.append(PREFIX+liList.eq(i).attr("href"))
 	return foList
 
+def fetchUser(url):
+	# 1.获取用户基本信息basic并插入tourist表
+	basicInfo = getBasicInfo(url)
+	MFWdb.insertUserBasicInfo(basicInfo)
+
+	# 2.获取用户关注列表中其它用户的url，并插入personalUrl表
+	foList = getFollowingList(url)
+	MFWdb.insertUserUrlList(foList)
+
+	# 3.从personalUrl表中，删除已抓取过的用户url
+	MFWdb.deleteUserUrl(url)
+
 def main():
-	basicInfo = getBasicInfo("http://www.mafengwo.cn/u/nopa13.html")
-	print basicInfo
-	print getFollowingList("http://www.mafengwo.cn/u/nopa13.html")
+	url = "http://www.mafengwo.cn/u/nopa13.html"
+	fetchUser(url)
 
 if __name__ == '__main__':
 	main()
