@@ -8,6 +8,8 @@ import travelnote
 import MFWdb
 import time
 import requests
+
+# 循环抓取多用户
 def fetchMany():
     conn = MFWdb.MFWConnect()
     cur = conn.cursor()
@@ -23,5 +25,11 @@ def fetchMany():
             print 'error occurs in requests' %(personalUrl)
     cur.close()
     conn.close()
+
+# 抓取单用户
+def fetchSingleUser():
+    userUrl = "http://www.mafengwo.cn/u/11003586.html"
+    fetchUserAndNotes(url)
+
 if __name__ == '__main__':
         fetchMany()
