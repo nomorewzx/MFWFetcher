@@ -29,7 +29,7 @@ def fetchMany():
 # 抓取单用户
 def fetchSingleUser():
     userUrl = "http://www.mafengwo.cn/u/11003586.html"
-    fetchUserAndNotes(url)
+    tourist.fetchUserAndNotes(userUrl)
 
 if __name__ == '__main__':
-        fetchMany()
+        fetchSingleUser()
