@@ -23,6 +23,6 @@ USE mafengwo
 		travelCost DOUBLE(9,3),
 		spot VARCHAR(20) CHARACTER SET 'utf8',
 		lng DOUBLE(16,10),
-		lat DOUBLE(16,10)
+		lat DOUBLE(16,10),
 		foreign key (uid) references tourist(uid)
 	);
